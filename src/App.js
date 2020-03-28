@@ -1,3 +1,6 @@
+/* By Bo Ericsson, bo@boe.net, beric00@gmail.com */
+
+// Imports
 import React from "react";
 
 // Constants
@@ -7,9 +10,9 @@ const MIDDLE = "middle";
 
 const DEBUG = true;
 
-const imageHeight = 200;
-const pageSize = 10;
-const maxImages = 30;
+const imageContainerHeight = 200; // Height of the image container elements
+const pageSize = 10; // Number of images per each api request
+const maxImages = 30; // Maximum images allowed in the DOM
 
 // Input validation
 if (maxImages < pageSize * 2) {
@@ -23,8 +26,8 @@ if (maxImages % pageSize !== 0) {
 const halfMaxPages = (~~(maxImages / pageSize / 2) * pageSize);
 
 const imageOuterContainerStyle = {
-  height: `${imageHeight}px`,
-  maxHeight: `${imageHeight}px`,
+  height: `${imageContainerHeight}px`,
+  maxHeight: `${imageContainerHeight}px`,
   outline: '1px solid black',
   overflow: 'hidden',
 };
@@ -124,16 +127,17 @@ class App extends React.Component {
     const newPosition =
       innerHeight > containerBottomPos
         ? BOTTOM
-        : -containerTopPos < imageHeight
+        : -containerTopPos < imageContainerHeight
           ? TOP
           : MIDDLE;
 
     // Compute the current page
-    const currentPage = ~~(-containerTopPos / (pageSize * imageHeight));
+    const currentPage = ~~(-containerTopPos / (pageSize * imageContainerHeight));
 
     // Determine if a scroll to the bottom has occurred
     if (position !== newPosition && newPosition === BOTTOM) {
       console.log("trackScroll: bottom has been reached - append new page");
+
       // One shot trigger to fetch more images
       this.fetchPage(currentPage + 1);
     }
@@ -146,9 +150,7 @@ class App extends React.Component {
     // Whenever the page is changing as the user is scrolling up/down, update the page logic
     //console.log("trackScroll: - page change:", currentPage);
     this.fetchPage(currentPage);
-    this.setState({
-      position: newPosition
-    });
+    this.setState({ position: newPosition });
   }
 
   fetchPage(page) {
@@ -160,13 +162,13 @@ class App extends React.Component {
       // Handle append operation
       // console.log("append");
 
-      // Immediately append a set of  placeholder image items
+      // Immediately append a set of placeholder image items
       const startIdx = images.length;
       const endIdx = startIdx + pageSize;
       const newImages = [...images];
       for (let idx = startIdx; idx < endIdx; idx++) {
         newImages.push({
-          backgroundColor: 'gray',
+          backgroundColor: 'darkgray',
           id: idx,
           url: '',
           valid: true,
@@ -181,7 +183,7 @@ class App extends React.Component {
         // Determine number of items to invalidate
         const itemsToInvalidate = newImages.length - maxImages;
 
-        // Define indicies for invaliation iteration
+        // Define indicies for invalidation iteration
         const endIdx = newImages.length - maxImages;
         const startIdx = endIdx - itemsToInvalidate;
 
@@ -192,6 +194,7 @@ class App extends React.Component {
       }
 
       this.setState({images: newImages},
+        // Immediately after completion of setState, fire an api call
         () => {
           const { images } = this.state;
 
@@ -201,13 +204,12 @@ class App extends React.Component {
             {
               headers: {
                 "Content-Type": "application/json",
-                "x-api-key": "b3f8e6b0-6482-499f-9847-f099630ca460"
+                "x-api-key": "b3f8e6b0-6482-499f-9847-f099630ca460" // BoE's personal key
               }
             }
           )
             .then(data => data.json())
             .then(data => {
-              // console.log(data);
               const imagesFromApi = data.map((d, idFromData) => {
                 const backgroundColor = 'gray';
 
@@ -217,10 +219,12 @@ class App extends React.Component {
                   id: pageSize * page + idFromData,
                   idFromApi,
                   url,
-                  valid: true
+                  valid: true,
                 };
               });
 
+              // Add the just-arrived image references in the right place in the imagages array
+              // and set state
               const startIdx = page * pageSize;
               const endIdx = startIdx + pageSize;
               const frontImages = images.slice(0, startIdx);
@@ -238,7 +242,7 @@ class App extends React.Component {
       // Invalidae all images
       updatedImages.forEach(d => (d.valid = false));
 
-      // Then compute array indicies for validate of those images centered around
+      // Then compute array indicies for validation of those images centered around
       // the current page, taking into account various boundary conditions (beginning
       // and end of the array and less images loaded than max allowd in the DOM)
       let startIdx = page * pageSize - halfMaxPages;
@@ -254,6 +258,7 @@ class App extends React.Component {
         updatedImages[idx].valid = true;
       }
 
+      // Then update state
       this.setState({
         images: [ ...updatedImages ],
         page
@@ -264,7 +269,7 @@ class App extends React.Component {
   render() {
     const { images, page } = this.state;
 
-    // Compute variables for debug/console.log
+    // Compute variables for debug and overlay
     const firstValidIdx = images.findIndex(d => d.valid);
     const lastValidIdx =
       images.length - images.slice().reverse().findIndex(d => d.valid) - 1;
@@ -293,11 +298,8 @@ class App extends React.Component {
           const { backgroundColor, id, url: originalUrl, valid } = d;
 
          // Determine if this image should be evacuated from the browser cache
-         // Please note that the "valid" prop is determined by the cleansing
-         // algoritms above
-         // Hard to test, as the browser keeps its own cache of imates, but
-         // plese inspect the DOM and to see that the source prop is an empty string
-         // for those images evacuated
+         // Please note that the "valid" prop is determined by the validation procedures in the
+         // fetchPage method above
           const url = valid ? originalUrl : "";
 
           return (
@@ -310,7 +312,7 @@ class App extends React.Component {
                   <img
                     alt="This is some kind of cat..."
                     src={url}
-                    style={{ width: `${imageHeight * .75}px`, height: `${imageHeight * .75}px` }}
+                    style={{ width: `${imageContainerHeight * .75}px`, height: `${imageContainerHeight * .75}px` }}
                   />
                 </div>
               </div>
