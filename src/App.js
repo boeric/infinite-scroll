@@ -37,6 +37,7 @@ const imageInnerContainerStyle = {
   flexDirection: "column",
 }
 
+const overlayHeight = 400;
 const overlayStyle = {
   position: 'fixed',
   top: '40px',
@@ -276,7 +277,6 @@ class App extends React.Component {
     }
 
     // Compute values for overlay
-    const overlayHeight = 400;
     const overlayHeightStyle = `${overlayHeight}px`;
     const percentValid = (lastValidIdx - firstValidIdx + 1) / (images.length || 1);
     const selectionHeight = overlayHeight * percentValid;
