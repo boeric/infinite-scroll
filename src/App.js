@@ -33,9 +33,9 @@ const DEBUG = true;
 const imageContainerHeight = 200;
 
 // Number of images per each api request. Must be sufficiently large so that when after
-// the initial (and automatic) load of "pageSize" images, the images fill all available
-// space in the containing window. Otherwise the user will not be able to scroll down, and
-// with no scroll down ability, no additional images will be loaded
+// the initial (and automatic) load of "pageSize" images, the images fill all avaiable
+// space in the containing window. Otherwise the will not be able to scroll down, and
+// a scroll down no additional images will be loaded
 // Sizes to try: 10, 20, 30, etc.
 const pageSize = 10;
 
@@ -104,11 +104,7 @@ const currentPageStyle = {
   backgroundColor: "yellow"
 };
 
-// There is an annoying extra render call after each setState call, and I
-// currently don't know why. Changed to PureComponent but it didn't matter
-// Anyway, this keeps track of the number of render calls
 let renderCount = 0;
-
 
 class App extends React.PureComponent {
   constructor() {
@@ -120,8 +116,8 @@ class App extends React.PureComponent {
       page: 0,
     };
 
-    // These variables, set directly on the instance, are used by the scrollTrack
-    // method below
+    // These variables set directly on the instance are used by the scrollTrack
+    // method
     this.offset = 0;
     this.position = TOP;
 
@@ -264,7 +260,7 @@ class App extends React.PureComponent {
                 return {
                   backgroundColor,
                   id: pageSize * page + idFromData,
-                  idFromApi, // Not good as a React key as the same image can be received multiple times
+                  idFromApi,
                   url,
                   valid: true
                 };
