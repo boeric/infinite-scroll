@@ -47,23 +47,23 @@ const maxImages = 30;
 
 // Input validation
 if (maxImages < pageSize * 2) {
-  throw new Error('maxImages must be twice the pageSize')
+  throw new Error("maxImages must be twice the pageSize");
 }
 if (maxImages % pageSize !== 0) {
-  throw new Error('maxImages must be a multiple of the pageSize')
+  throw new Error("maxImages must be a multiple of the pageSize");
 }
 if (maxImages < 3 * pageSize) {
-  throw new Error('maxImages must be at least three times the pageSize')
+  throw new Error("maxImages must be at least three times the pageSize");
 }
 
 // Variable used to "center" the DOM-loaded images around the current page
-const halfMaxPages = (~~(maxImages / pageSize / 2) * pageSize);
+const halfMaxPages = ~~(maxImages / pageSize / 2) * pageSize;
 
 const imageOuterContainerStyle = {
   height: `${imageContainerHeight}px`,
   maxHeight: `${imageContainerHeight}px`,
-  outline: '1px solid black',
-  overflow: 'hidden',
+  outline: "1px solid black",
+  overflow: "hidden"
 };
 
 const imageInnerContainerStyle = {
@@ -71,51 +71,53 @@ const imageInnerContainerStyle = {
   padding: "10px",
   fontFamily: "Helvetica",
   display: "flex",
-  flexDirection: "column",
-}
+  flexDirection: "column"
+};
 
 const overlayHeight = 400;
 const overlayStyle = {
-  position: 'fixed',
-  top: '40px',
-  left: '200px',
-  width: '100px',
-  backgroundColor: 'rgba(255, 255, 255, 0.01)',
-  display: 'flex',
-  flexDirection: 'column',
+  position: "fixed",
+  top: "40px",
+  left: "200px",
+  width: "100px",
+  backgroundColor: "rgba(255, 255, 255, 0.01)",
+  display: "flex",
+  flexDirection: "column"
 };
 
 const currentDomSelectionStyle = {
-  position: 'absolute',
-  left: '0px',
-  width: '100px',
-  backgroundColor: 'rgba(100, 100, 100, 0.1)',
+  position: "absolute",
+  left: "0px",
+  width: "100px",
+  backgroundColor: "rgba(100, 100, 100, 0.1)"
 };
 
 const currentPageStyle = {
-  position: 'absolute',
-  left: '0px',
-  width: '100px',
-  borderTop: '1px solid black',
-  marginLeft: '0px',
-  fontFamily: 'Helvetica',
-  fontSize: '10px',
-  textIndent: '5px',
-  backgroundColor: 'yellow',
+  position: "absolute",
+  left: "0px",
+  width: "100px",
+  borderTop: "1px solid black",
+  marginLeft: "0px",
+  fontFamily: "Helvetica",
+  fontSize: "10px",
+  textIndent: "5px",
+  backgroundColor: "yellow"
 };
 
+let renderCount = 0;
 
-class App extends React.Component {
+class App extends React.PureComponent {
   constructor() {
     super();
 
     // Set the initial state
     this.state = {
       page: 0,
-      position: TOP,
       images: [],
-      offset: 0
     };
+
+    this.offset = 0;
+    this.position = TOP;
 
     // Create a ref to the container of the container of the cat elements
     this.container = React.createRef();
@@ -131,8 +133,7 @@ class App extends React.Component {
     window.addEventListener("scroll", this.trackScroll, true);
 
     // Get the offset into the client rectangle
-    const offset = this.container.current.getBoundingClientRect().top;
-    this.setState({ offset });
+    this.offset = this.container.current.getBoundingClientRect().top;
 
     // Do the initial fetch of images
     this.fetchPage(page);
@@ -143,13 +144,15 @@ class App extends React.Component {
   }
 
   trackScroll() {
-    const { position, offset, page } = this.state;
+    const { page } = this.state;
+    const offset = this.offset;
 
     // Use the container ref to get the container elem
     const container = this.container.current;
 
     // Get the container's bottom position in pixels (changes with scrolling)
-    const containerBottomPos = container.getBoundingClientRect().bottom - offset;
+    const containerBottomPos =
+      container.getBoundingClientRect().bottom - offset;
 
     // Get the container's top position in pixels (changes with scrolling)
     const containerTopPos = container.getBoundingClientRect().top - offset;
@@ -169,11 +172,12 @@ class App extends React.Component {
     const currentPage = ~~(-containerTopPos / (pageSize * imageContainerHeight));
 
     // Determine if a scroll to the bottom has occurred
-    if (position !== newPosition && newPosition === BOTTOM) {
+    if (this.position !== newPosition && newPosition === BOTTOM) {
       console.log("trackScroll: bottom has been reached - append new page");
 
       // One shot trigger to fetch more images
       this.fetchPage(currentPage + 1);
+      return;
     }
 
     // If we're at the same page as before, so do no further processing
@@ -181,32 +185,31 @@ class App extends React.Component {
       return;
     }
 
+    // Update position
+    this.position = newPosition;
+
     // Whenever the page is changing as the user is scrolling up/down, update the page logic
-    //console.log("trackScroll: - page change:", currentPage);
     this.fetchPage(currentPage);
-    this.setState({ position: newPosition });
   }
 
   fetchPage(page) {
-    // console.log("fetchPage: ", page);
     const { images } = this.state;
 
     // Determine if this is an append operation
     if (page * pageSize >= images.length) {
       // Handle append operation
-      // console.log("append");
 
       // Immediately append a set of placeholder image items
       const startIdx = images.length;
       const endIdx = startIdx + pageSize;
-      const newImages = [...images];
+      const newImages = [ ...images ];
       for (let idx = startIdx; idx < endIdx; idx++) {
         newImages.push({
-          backgroundColor: 'darkgray', // While waiting for the new images to arrive, use darkgray
+          backgroundColor: "darkgray", // While waiting for the new images to arrive, use darkgray
           id: idx,
-          url: '',
-          valid: true,
-        })
+          url: "",
+          valid: true
+        });
       }
 
       // Determine the current number of valid images
@@ -227,26 +230,29 @@ class App extends React.Component {
         }
       }
 
-      this.setState({images: newImages},
-        // Immediately after completion of setState, fire an api call
+      // Update state with a new instance of images (which includes the placeholders
+      // for the just requested new images). This will cause a refresh, needed for the
+      // the scroll logic
+      this.setState(
+        { images: newImages },
+        // Immediately after completion of setState, fire the api call
         () => {
           const { images } = this.state;
 
           // Fetch a pageSize of cat images
-          //
           fetch(
             `https://api.thecatapi.com/v1/images/search?limit=${pageSize}&page=${page}`,
             {
               headers: {
                 "Content-Type": "application/json",
-                "x-api-key": "b3f8e6b0-6482-499f-9847-f099630ca460" // BoE's personal key
+                "x-api-key": "b3f8e6b0-6482-499f-9847-f099630ca460" // BoE's personal api key
               }
             }
           )
             .then(data => data.json())
             .then(data => {
               const imagesFromApi = data.map((d, idFromData) => {
-                const backgroundColor = 'gray'; // Replace the placeholder dark gray with gray
+                const backgroundColor = "gray"; // Replace the placeholder dark gray with gray
 
                 const { id: idFromApi, url } = d;
                 return {
@@ -254,7 +260,7 @@ class App extends React.Component {
                   id: pageSize * page + idFromData,
                   idFromApi,
                   url,
-                  valid: true,
+                  valid: true
                 };
               });
 
@@ -266,14 +272,20 @@ class App extends React.Component {
               const endIdx = startIdx + pageSize;
               const frontImages = images.slice(0, startIdx);
               const backImages = images.slice(endIdx, images.length);
-              const newImages = [ ...frontImages, ...imagesFromApi, ...backImages ];
+              const newImages = [
+                ...frontImages,
+                ...imagesFromApi,
+                ...backImages
+              ];
 
-              this.setState({images: newImages})
+              // Update state with a new instance of the images, which now contains the
+              // url references to each image
+              this.setState({ images: newImages });
             });
-        });
+        }
+      );
     } else {
       // Handle non-append situation
-      // console.log("nonAppend");
       const updatedImages = [ ...images ];
 
       // Invalidae all images
@@ -283,12 +295,13 @@ class App extends React.Component {
       // page, taking into account various boundary conditions (beginning and end of the array
       // and less images loaded than max allowd in the DOM)
       let startIdx = page * pageSize - halfMaxPages;
-      startIdx = startIdx < 0
-        ? 0
-        : startIdx + maxImages > images.length
-          ? Math.max(0, images.length - maxImages)
-          : Math.max(0, startIdx);
-      const endIdx = Math.min(startIdx + maxImages, images.length)
+      startIdx =
+        startIdx < 0
+          ? 0
+          : startIdx + maxImages > images.length
+            ? Math.max(0, images.length - maxImages)
+            : Math.max(0, startIdx);
+      const endIdx = Math.min(startIdx + maxImages, images.length);
 
       // Validate the images between the indicies
       for (let idx = startIdx; idx < endIdx; idx++) {
@@ -297,7 +310,7 @@ class App extends React.Component {
 
       // Then update state
       this.setState({
-        images: [ ...updatedImages ],
+        images: updatedImages,
         page
       });
     }
@@ -308,13 +321,12 @@ class App extends React.Component {
 
     // Compute variables for debug and overlay
     const firstValidIdx = images.findIndex(d => d.valid);
-    const lastValidIdx =
-      images.length - images.slice().reverse().findIndex(d => d.valid) - 1;
+    const lastValidIdx = images.length - images.slice().reverse().findIndex(d => d.valid) - 1;
     const spanLength = lastValidIdx - firstValidIdx + 1;
 
     // Turn off the DEBUG boolean if you don't wan't to see noise in the console...
     if (DEBUG && images.length !== 0) {
-      console.log(`Images in DOM: ${spanLength}, total: ${images.length} (idx ${firstValidIdx}-${lastValidIdx}), Page: ${page})`);
+      console.log(`${renderCount++} Images in DOM: ${spanLength}, total: ${images.length} (idx ${firstValidIdx}-${lastValidIdx}), Page: ${page})`);
       // console.log('images', images);
     }
 
@@ -323,10 +335,10 @@ class App extends React.Component {
     const percentValid = (lastValidIdx - firstValidIdx + 1) / (images.length || 1);
     const selectionHeight = overlayHeight * percentValid;
     const selectionHeightStyle = `${selectionHeight}px`;
-    const currentPageTopStyle = `${page * pageSize / (images.length || 1) * overlayHeight}px`;
-    const currentPageHeightStyle = `${pageSize / (images.length || 1) * overlayHeight}px`;
+    const currentPageTopStyle = `${((page * pageSize) / (images.length || 1)) * overlayHeight}px`;
+    const currentPageHeightStyle = `${(pageSize / (images.length || 1)) * overlayHeight}px`;
     const currentPageString = `Current page: ${page}`;
-    const selectionTop = firstValidIdx / (images.length || 1) * overlayHeight;
+    const selectionTop = (firstValidIdx / (images.length || 1)) * overlayHeight;
     const selectionTopStyle = `${selectionTop}px`;
 
     return (
@@ -334,13 +346,16 @@ class App extends React.Component {
         {images.map(d => {
           const { backgroundColor, id, url: originalUrl, valid } = d;
 
-         // Determine if this image should be evacuated from the browser cache
-         // Please note that the "valid" prop is determined by the validation procedures in the
-         // fetchPage method above
+          // Determine if this image should be evacuated from the DOM
+          // Please note that the "valid" prop is determined by the validation procedures in the
+          // fetchPage method above
           const url = valid ? originalUrl : "";
 
           return (
-            <div key={id} style={{ ...imageOuterContainerStyle, ...{ backgroundColor } }}>
+            <div
+              key={id}
+              style={{ ...imageOuterContainerStyle, ...{ backgroundColor } }}
+            >
               <div style={imageInnerContainerStyle}>
                 <div>
                   {`Id: ${id}, valid: ${valid}, color: ${backgroundColor}, url: ${url}`}
@@ -349,16 +364,29 @@ class App extends React.Component {
                   <img
                     alt="This is some kind of cat..."
                     src={url}
-                    style={{ width: `${imageContainerHeight * .75}px`, height: `${imageContainerHeight * .75}px` }}
+                    style={{
+                      width: `${imageContainerHeight * 0.75}px`,
+                      height: `${imageContainerHeight * 0.75}px`
+                    }}
                   />
                 </div>
               </div>
               <div style={{ ...overlayStyle, ...{ height: overlayHeightStyle } }}>
-                <div style={{ ...currentDomSelectionStyle, ...{ top: selectionTopStyle, height: selectionHeightStyle } }}/>
-                <div style={{...currentPageStyle, ...{ top: currentPageTopStyle, height: currentPageHeightStyle } }}>
+                <div
+                  style={{
+                    ...currentDomSelectionStyle,
+                    ...{ top: selectionTopStyle, height: selectionHeightStyle }
+                  }}
+                />
+                <div
+                  style={{
+                    ...currentPageStyle,
+                    ...{ top: currentPageTopStyle, height: currentPageHeightStyle }
+                  }}
+                >
                   {currentPageString}
                 </div>
-             </div>
+              </div>
             </div>
           );
         })}
