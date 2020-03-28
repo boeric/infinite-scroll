@@ -96,7 +96,7 @@ const overlayStyle = {
   top: "40px",
   left: "200px",
   width: "100px",
-  backgroundColor: "rgba(255, 255, 255, 0.01)",
+  backgroundColor: "rgba(255, 255, 255, 0.8)",
   display: "flex",
   flexDirection: "column"
 };
@@ -105,7 +105,7 @@ const currentDomSelectionStyle = {
   position: "absolute",
   left: "0px",
   width: "100px",
-  backgroundColor: "rgba(100, 100, 100, 0.1)"
+  backgroundColor: "rgba(100, 100, 100, 0.5)"
 };
 
 const currentPageStyle = {
@@ -367,13 +367,40 @@ class App extends React.PureComponent {
 
     return (
       <div ref={this.container}>
+        <div style={{ ...overlayStyle, ...{ height: overlayHeightStyle } }}>
+          <div
+            style={{
+              ...currentDomSelectionStyle,
+              ...{ top: selectionTopStyle, height: selectionHeightStyle }
+            }}
+          />
+          <div
+            style={{
+              ...currentPageStyle,
+              ...{ top: currentPageTopStyle, height: currentPageHeightStyle }
+            }}
+          >
+            {currentPageString}
+          </div>
+        </div>
         {images.map(d => {
-          const { backgroundColor, id, url: originalUrl, valid } = d;
+          const { backgroundColor, id, url, valid } = d;
 
           // Determine if this image should be evacuated from the DOM.
           // Please note that the "valid" prop is determined by the validation procedures in the
           // "fetchPage" method above
-          const url = valid ? originalUrl : "";
+          const innerComponent = valid
+            ? (
+                <img
+                  alt="This is some kind of cat..."
+                  src={url}
+                  style={{
+                    width: `${imageContainerHeight * 0.75}px`,
+                    height: `${imageContainerHeight * 0.75}px`
+                  }}
+                />
+              )
+            : (<div />)
 
           return (
             <div
@@ -385,30 +412,7 @@ class App extends React.PureComponent {
                   {`Id: ${id}, valid: ${valid}, color: ${backgroundColor}, url: ${url}`}
                 </div>
                 <div style={{ marginTop: "10px" }}>
-                  <img
-                    alt="This is some kind of cat..."
-                    src={url}
-                    style={{
-                      width: `${imageContainerHeight * 0.75}px`,
-                      height: `${imageContainerHeight * 0.75}px`
-                    }}
-                  />
-                </div>
-              </div>
-              <div style={{ ...overlayStyle, ...{ height: overlayHeightStyle } }}>
-                <div
-                  style={{
-                    ...currentDomSelectionStyle,
-                    ...{ top: selectionTopStyle, height: selectionHeightStyle }
-                  }}
-                />
-                <div
-                  style={{
-                    ...currentPageStyle,
-                    ...{ top: currentPageTopStyle, height: currentPageHeightStyle }
-                  }}
-                >
-                  {currentPageString}
+                  {innerComponent}
                 </div>
               </div>
             </div>
