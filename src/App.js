@@ -9,8 +9,13 @@
    when each image is rendered, that "valid" prop controls whether the "src" attribute of
    the <img> element is set or cleared.
 
-   Also please note that the logic, as it currently stands, requires that the window height
-   is no taller than two times the "pageSize" constant
+   Also please note that this implementation presents to the user a permanent and stable
+   set of images. The response of the cat api delivers random cat images. In this
+   implementation, when the api returns the cat url references, those reference are kept
+   permanently in the image array. So when a page worth of images have been unloaded from
+   the DOM, and then restored, the very same "url" prop is set on the corresponding <img>
+   element. Another way to say it that a "green ugly cat" at image position 31, will always
+   be such "green ugly cat" image ;-)
 */
 
 // Imports
@@ -23,9 +28,22 @@ const MIDDLE = "middle";
 
 const DEBUG = true;
 
-const imageContainerHeight = 200; // Height of the image container elements
-const pageSize = 10; // Number of images per each api request
-const maxImages = 30; // Maximum images allowed in the DOM
+// Height of the image container elements
+// Heights to try: 30, 50, 100, 200, etc.
+const imageContainerHeight = 200;
+
+// Number of images per each api request. Must be sufficiently large so that when after
+// the initial (and automatic) load of "pageSize" images, the images fill all avaiable
+// space in the containing window. Otherwise the will not be able to scroll down, and
+// a scroll down no additional images will be loaded
+// Sizes to try: 10, 20, 30, etc.
+const pageSize = 10;
+
+// Maximum number of images allowed in the DOM. Must be at least three times
+// the pageSize to leave sufficient number of images on both sides of the current
+// page. It also needs to be a multiple of the page size
+// Values to try: 30 (with pageSize 10), 60 (with pageSize 20), 90 (with pageSize 30)
+const maxImages = 30;
 
 // Input validation
 if (maxImages < pageSize * 2) {
@@ -33,6 +51,9 @@ if (maxImages < pageSize * 2) {
 }
 if (maxImages % pageSize !== 0) {
   throw new Error('maxImages must be a multiple of the pageSize')
+}
+if (maxImages < 3 * pageSize) {
+  throw new Error('maxImages must be at least three times the pageSize')
 }
 
 // Variable used to "center" the DOM-loaded images around the current page
@@ -211,7 +232,8 @@ class App extends React.Component {
         () => {
           const { images } = this.state;
 
-          // Fetch a page worth of images
+          // Fetch a pageSize of cat images
+          //
           fetch(
             `https://api.thecatapi.com/v1/images/search?limit=${pageSize}&page=${page}`,
             {
@@ -236,8 +258,10 @@ class App extends React.Component {
                 };
               });
 
-              // Add the just-arrived image references in the right place in the imagages array
-              // and the set state
+              // Add the just-arrived image references in the right place in the images array.
+              // This will normally be at the end of the images array, but in an edge case where
+              // the user has a slow internet connection and has already scrolled a pageSize
+              // down and caused another load of pageSize images, it wouldn't be at the end...
               const startIdx = page * pageSize;
               const endIdx = startIdx + pageSize;
               const frontImages = images.slice(0, startIdx);
