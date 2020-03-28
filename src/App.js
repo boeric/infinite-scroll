@@ -183,7 +183,7 @@ class App extends React.PureComponent {
 
     // Compute position
     const newPosition =
-      innerHeight > containerBottomPos
+      innerHeight >= containerBottomPos
         ? BOTTOM
         : -containerTopPos < imageContainerHeight
           ? TOP
