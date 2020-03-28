@@ -1,5 +1,18 @@
 /* By Bo Ericsson, bo@boe.net, beric00@gmail.com */
 
+/*
+   Please note that the terms "validation" and "invalidation" refers to the determination
+   of which images should remain in the DOM or be evacuated, to ensure that no more than
+   a certain number of images ("maxImages") are present in the DOM at any given point in
+   time. This determination is done dynamically as the user is scrolling up or down. That
+   logic sets a "valid" prop on the object that holds the image information. Then in render,
+   when each image is rendered, that "valid" prop controls whether the "src" attribute of
+   the <img> element is set or cleared.
+
+   Also please note that the logic, as it currently stands, requires that the window height
+   is no taller than two times the "pageSize" constant
+*/
+
 // Imports
 import React from "react";
 
@@ -168,7 +181,7 @@ class App extends React.Component {
       const newImages = [...images];
       for (let idx = startIdx; idx < endIdx; idx++) {
         newImages.push({
-          backgroundColor: 'darkgray',
+          backgroundColor: 'darkgray', // While waiting for the new images to arrive, use darkgray
           id: idx,
           url: '',
           valid: true,
@@ -211,7 +224,7 @@ class App extends React.Component {
             .then(data => data.json())
             .then(data => {
               const imagesFromApi = data.map((d, idFromData) => {
-                const backgroundColor = 'gray';
+                const backgroundColor = 'gray'; // Replace the placeholder dark gray with gray
 
                 const { id: idFromApi, url } = d;
                 return {
@@ -224,7 +237,7 @@ class App extends React.Component {
               });
 
               // Add the just-arrived image references in the right place in the imagages array
-              // and set state
+              // and the set state
               const startIdx = page * pageSize;
               const endIdx = startIdx + pageSize;
               const frontImages = images.slice(0, startIdx);
@@ -242,9 +255,9 @@ class App extends React.Component {
       // Invalidae all images
       updatedImages.forEach(d => (d.valid = false));
 
-      // Then compute array indicies for validation of those images centered around
-      // the current page, taking into account various boundary conditions (beginning
-      // and end of the array and less images loaded than max allowd in the DOM)
+      // Then compute array indicies for validation of those images centered around the current
+      // page, taking into account various boundary conditions (beginning and end of the array
+      // and less images loaded than max allowd in the DOM)
       let startIdx = page * pageSize - halfMaxPages;
       startIdx = startIdx < 0
         ? 0
