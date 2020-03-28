@@ -8,8 +8,8 @@
    a certain number of images ("maxImages") are present in the DOM at any given point in
    time. This determination is done dynamically as the user is scrolling up or down. That
    logic sets a "valid" prop on the object that holds the image information. Then in "render",
-   when each image is rendered, that "valid" prop controls whether the "src" attribute of
-   the <img> element is set or cleared.
+   when each image is rendered, that "valid" prop controls whether an <img> element is
+   generated or not.
 
    Also please note that this implementation presents to the user a permanent and stable
    set of images. The response of the cat api delivers random cat images. In this
@@ -386,7 +386,7 @@ class App extends React.PureComponent {
         {images.map(d => {
           const { backgroundColor, id, url, valid } = d;
 
-          // Determine if this image should be evacuated from the DOM.
+          // Determine if this image should be evacuated from the DOM
           // Please note that the "valid" prop is determined by the validation procedures in the
           // "fetchPage" method above
           const innerComponent = valid
