@@ -1,11 +1,13 @@
 /* By Bo Ericsson, beric00@gmail.com */
 
+// TODO: eslint overrides
+
 /*
    Please note that the terms "validation" and "invalidation" refers to the determination
    of which images should remain in the DOM or be evacuated, to ensure that no more than
    a certain number of images ("maxImages") are present in the DOM at any given point in
    time. This determination is done dynamically as the user is scrolling up or down. That
-   logic sets a "valid" prop on the object that holds the image information. Then in render,
+   logic sets a "valid" prop on the object that holds the image information. Then in "render",
    when each image is rendered, that "valid" prop controls whether the "src" attribute of
    the <img> element is set or cleared.
 
@@ -25,7 +27,7 @@
    I suggest a down-scroll to, let's say, 80-100 images. When the app opens up, all is yellow,
    as the initial auto-fetch will obviously be all images and therefore fill up the full
    rectangle. Further down-scrolls will add more images and the current page (yellow) will
-   become smaller. Eventually as further down-scrolls occurs the app will have fetched more
+   become smaller. Eventually as further down-scrolls occurs, the app will have fetched more
    images than allowed in the DOM, the white background will appear. Further scrolls will
    move the gray and yellow rectangles down. Then start scrolling back up towards the top, and
    the gray/yellow rectangles will move accordingly. Basically, the full algorithm is
@@ -38,7 +40,7 @@ import React from "react";
 // Constants
 const TOP = "top";
 const BOTTOM = "bottom";
-const MIDDLE = "middle";
+const MIDDLE = "middle"; // TODO: remove, as it is not needed
 
 const DEBUG = true;
 
@@ -48,8 +50,8 @@ const imageContainerHeight = 200;
 
 // Number of images per each api request. Must be sufficiently large so that when after
 // the initial (and automatic) load of "pageSize" images, the images fill all avaiable
-// space in the containing window. Otherwise the will not be able to scroll down, and
-// a scroll down no additional images will be loaded
+// space in the containing window. Otherwise the user will not be able to scroll down, and
+// without an ability to scroll down, no additional images will be loaded
 // Sizes to try: 10, 20, 30, etc.
 const pageSize = 10;
 
@@ -118,7 +120,11 @@ const currentPageStyle = {
   backgroundColor: "yellow"
 };
 
+// There is an annoying extra render call after each setState call, and I currently
+// don't know why. Changed to PureComponent, but it didn't matter. Anyway, this
+// keeps track of the number of render calls
 let renderCount = 0;
+
 
 class App extends React.PureComponent {
   constructor() {
@@ -130,8 +136,8 @@ class App extends React.PureComponent {
       page: 0,
     };
 
-    // These variables set directly on the instance are used by the scrollTrack
-    // method
+    // These variables, set directly on the instance, are used by the "scrollTrack"
+    // method, and only affects the app render state indirectly
     this.offset = 0;
     this.position = TOP;
 
@@ -146,7 +152,7 @@ class App extends React.PureComponent {
     const { page } = this.state;
 
     // Add scroll event listener
-    window.addEventListener("scroll", this.trackScroll, true);
+    window.addEventListener("scroll", this.trackScroll, true); // TODO: remove "true" arg
 
     // Get the offset into the client rectangle
     this.offset = this.container.current.getBoundingClientRect().top;
@@ -167,8 +173,7 @@ class App extends React.PureComponent {
     const container = this.container.current;
 
     // Get the container's bottom position in pixels (changes with scrolling)
-    const containerBottomPos =
-      container.getBoundingClientRect().bottom - offset;
+    const containerBottomPos = container.getBoundingClientRect().bottom - offset;
 
     // Get the container's top position in pixels (changes with scrolling)
     const containerTopPos = container.getBoundingClientRect().top - offset;
@@ -187,11 +192,13 @@ class App extends React.PureComponent {
     // Compute the current page
     const currentPage = ~~(-containerTopPos / (pageSize * imageContainerHeight));
 
-    // Determine if a scroll to the bottom has occurred
+    // Determine if a scroll to the bottom just occurred
+    // TODO: evaluate whether its enough just testing for BOTTOM, or describe why the full
+    // statement is necessary
     if (this.position !== newPosition && newPosition === BOTTOM) {
       console.log("trackScroll: bottom has been reached - append new page");
 
-      // One shot trigger to fetch more images
+      // One shot trigger to fetch more images, to be placed in a new page after the current
       this.fetchPage(currentPage + 1);
       return;
     }
@@ -202,6 +209,7 @@ class App extends React.PureComponent {
     }
 
     // Update position
+    // TODO: move up this statement up a few rows
     this.position = newPosition;
 
     // Whenever the page is changing as the user is scrolling up/down, update the page logic
@@ -247,15 +255,14 @@ class App extends React.PureComponent {
       }
 
       // Update state with a new instance of images (which includes the placeholders
-      // for the just requested new images). This will cause a refresh, needed for the
+      // for the just-requested new images). This will cause a refresh, needed for the
       // the scroll logic
-      this.setState(
-        { images: newImages },
+      this.setState({ images: newImages },
         // Immediately after completion of setState, fire the api call
         () => {
           const { images } = this.state;
 
-          // Fetch a pageSize of cat images
+          // Fetch a "pageSize" number of new images
           fetch(
             `https://api.thecatapi.com/v1/images/search?limit=${pageSize}&page=${page}`,
             {
@@ -273,7 +280,7 @@ class App extends React.PureComponent {
                 const { id: idFromApi, url } = d;
                 return {
                   backgroundColor,
-                  id: pageSize * page + idFromData,
+                  id: pageSize * page + idFromData, // "page" is in a js closure
                   idFromApi,
                   url,
                   valid: true
@@ -295,7 +302,7 @@ class App extends React.PureComponent {
               ];
 
               // Update state with a new instance of the images, which now contains the
-              // url references to each image
+              // actual url references to each image
               this.setState({ images: newImages });
             });
         }
@@ -338,7 +345,7 @@ class App extends React.PureComponent {
     // Compute variables for debug and overlay
     const firstValidIdx = images.findIndex(d => d.valid);
     const lastValidIdx = images.length - images.slice().reverse().findIndex(d => d.valid) - 1;
-    const spanLength = lastValidIdx - firstValidIdx + 1;
+    const spanLength = lastValidIdx - firstValidIdx + 1; // TOTO: should rename to "validSpanLength"
 
     // Turn off the DEBUG boolean if you don't wan't to see noise in the console...
     if (DEBUG && images.length !== 0) {
@@ -347,6 +354,7 @@ class App extends React.PureComponent {
     }
 
     // Compute values for overlay
+    // TODO: explain why the "images.length || 1" construct (avoiding divide by zero)
     const overlayHeightStyle = `${overlayHeight}px`;
     const percentValid = (lastValidIdx - firstValidIdx + 1) / (images.length || 1);
     const selectionHeight = overlayHeight * percentValid;
@@ -362,9 +370,9 @@ class App extends React.PureComponent {
         {images.map(d => {
           const { backgroundColor, id, url: originalUrl, valid } = d;
 
-          // Determine if this image should be evacuated from the DOM
+          // Determine if this image should be evacuated from the DOM.
           // Please note that the "valid" prop is determined by the validation procedures in the
-          // fetchPage method above
+          // "fetchPage" method above
           const url = valid ? originalUrl : "";
 
           return (
