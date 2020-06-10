@@ -1,68 +1,13 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Demo of inifite scroll of images from the **cat.api** where only a finite number of images are kept in the browser.
 
-## Available Scripts
+In the `App.js` file, please note that the terms "validation" and "invalidation" refers to the determination of which images should remain in the DOM or be evacuated, to ensure that no more than a certain number of images ("maxImages") are present in the DOM at any given point in time. This determination is done dynamically as the user is scrolling up or down. That logic sets a "valid" prop on the object that holds the image information. Then in "render", when each image is rendered, that "valid" prop controls whether an <img> element is generated or not.
 
-In the project directory, you can run:
+Also please note that this implementation presents to the user a permanent and stable set of images. The response of the cat api delivers random cat images. In this implementation, when the api returns the cat url references, those reference are kept permanently in the image array. So when a page worth of images have been unloaded from the DOM, and then restored, the very same "url" prop is set on the corresponding <img> element. Another way to say it that a "green ugly cat" at image position 31, will always be such "green ugly cat" image ;-).
 
-### `yarn start`
+Finally, the overlay rectangle shows four things:
+  a) The overall height represents all images fetched
+  b) The yellow rectangle represents the images of the current page
+  c) The gray rectangle represents those images currently in the DOM
+  d) The white background represents those images that have been evacuated from the DOM
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
-
-### `yarn test`
-
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `yarn build`
-
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `yarn eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `yarn build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+I suggest a down-scroll to, let's say, 80-100 images. When the app opens up, all is yellow, as the initial auto-fetch will obviously be all images and therefore fill up the full rectangle. Further down-scrolls will add more images and the current page (yellow) will become smaller. Eventually as further down-scrolls occurs, the app will have fetched more images than allowed in the DOM, the white background will appear. Further scrolls will move the gray and yellow rectangles down. Then start scrolling back up towards the top, and the gray/yellow rectangles will move accordingly. Basically, the full algorithm is visualized with these simple <div>s.
